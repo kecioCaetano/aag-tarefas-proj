@@ -10,18 +10,9 @@ class Model{
         this.onTodoListChanged = callback
     }
 
-    add(todoText, description, dueDate, priority){
-
-        const todo = {
-            id: this.#getNextID(),
-            text: todoText,
-            description: description,
-            dueDate: dueDate,
-            priority: priority,
-            complete: false
-        }
-
-        this.todos.push(todo)
+    add(aTodo){
+        aTodo.id = this.#getNextID()
+        this.todos.push(aTodo)
         this.#commit()
     }
 
@@ -49,16 +40,17 @@ class Model{
         return this.todos
     }
 
-    edit(id, text, description, dueDate, priority){
+    edit(id, aTodo){
+
         this.todos =
             this.todos.map(
                 todo => todo.id === id ?
                     {id: id,
-                    text: text,
-                    description: description,
-                    dueDate: dueDate,
-                    priority: priority,
-                    complete: todo.complete} : todo
+                    text: aTodo.text,
+                    description: aTodo.description,
+                    dueDate: aTodo.dueDate,
+                    priority: aTodo.priority,
+                    complete: aTodo.complete} : todo
             ) 
         this.#commit()
     }
@@ -87,13 +79,33 @@ class View {
 
         this.input = this.#setElement('input')
         this.input.type = 'text';
-        this.input.placeHolder = 'Add todo here'
+        this.input.placeholder = 'Add todo here'
         this.input.name = 'todo'
+
+        this.description = this.#setElement('input')
+        this.description.type = 'text';
+        this.description.placeholder = 'Add todo description'
+        this.description.name = 'description'
+
+        this.dueDate = this.#setElement('input')
+        this.dueDate.type = 'text';
+        this.dueDate.placeholder = new Date()
+        this.dueDate.name = 'dueDate'
+
+        this.priority = this.#setElement('input')
+        this.priority.type = 'text';
+        this.priority.placeholder = 'Priority'
+        this.priority.name = 'priority'
+        
+        this.complete = this.#setElement('input')
+        this.complete.type = 'text';
+        this.complete.placeholder = 'Complete'
+        this.complete.name = 'complete'
 
         this.submitButton = this.#setElement('button')
         this.submitButton.textContent = 'Submit'
 
-        this.form.append(this.input, this.submitButton)
+        this.form.append(this.input, this.description, this.dueDate, this.priority, this.complete, this.submitButton)
 
         this.tittle = this.#setElement('h1')
         this.tittle.textContent = 'Todos'
@@ -103,7 +115,9 @@ class View {
         this.app.append(this.tittle, this.form, this.todoList)
 
         this._temporaryTodoText = ''
-        this._initLocalListeners()
+        this._temporaryTodo = {id: '', text: '', description: '', dueDate: '', priority: '', complete: ''}
+
+        // this._initLocalListeners()
     }
 
     #deleteNodes(){
@@ -114,10 +128,23 @@ class View {
 
     bindEditTodo(handler){
         this.todoList.addEventListener('focusout', event => {
-            if(this._temporaryTodoText){
-                handler(+event.target.parentElement.id, this._temporaryTodoText)
-                this._temporaryTodoText = ''
-            }
+
+            // if(this._temporaryTodoText){
+                // handler(+event.target.parentElement.id, this._temporaryTodoText)
+                // this._temporaryTodoText = ''
+
+              
+                // for(const [key] of Object.keys(this._temporaryTodo)){
+                //     if (this._temporaryTodo[key] === ''){
+                //         this._temporaryTodo[key] = this[key].value
+                //      } 
+                // }
+                handler(+event.target.parentElement.id, this._temporaryTodo)
+                // Object.keys(this._temporaryTodo).forEach((key)=>{
+                //         this._temporaryTodo[key] = ''
+                // })
+                // this._temporaryTodo[key] = ''
+            // }
         })
     }
 
@@ -141,18 +168,30 @@ class View {
         this.form.addEventListener('submit', event => {
             event.preventDefault()
 
-            if (this.#getTodoText){
-                handler(this.#getTodoText,'Description a', new Date(), 99)
-                this.setTodoText()
+            if (this.input.value){
+                 handler(this.#getTodoObj)
+                 this.#clearForm()
             }
         })
     }
-    get #getTodoText(){
-        return  this.input.value
+
+    get #getTodoObj(){
+        return {
+            id: '',
+            text: this.input.value,
+            description: this.description.value,
+            dueDate: this.dueDate.value,
+            priority: this.priority.value,
+            complete: this.complete.value
+        }
     }
 
-    setTodoText(){
+    #clearForm(){
         this.input.value = ''
+        this.description.value = ''
+        this.dueDate.value = ''
+        this.priority.value = ''
+        this.complete.value = ''
     }
 
     displayTodos(todos){
@@ -172,32 +211,81 @@ class View {
                 const checkbox = this.#setElement('input')
                 checkbox.type = 'checkbox'
                 checkbox.checked = todo.complete
+                checkbox.name = 'complete'
+                
+                const spanText = this.#setElement('span', 'editable')
+                spanText.contentEditable = true
+                spanText.name = 'text'
 
-                const span = this.#setElement('span', 'editable')
-                span.contentEditable = true
+                // const nbspNode = document.createElement('\u00A0')
+                
+                const spanDescription = this.#setElement('span', 'editable')
+                spanDescription.contentEditable = true
+                spanDescription.name = 'description'
+
+                const spanDueDate = this.#setElement('span', 'editable')
+                spanDueDate.contentEditable = true
+                spanDueDate.name = 'dueDate'
+
+                const spanPriority = this.#setElement('span', 'editable')
+                spanPriority.contentEditable = true
+                spanPriority.name = 'priority'
+
+                const spanComplete = this.#setElement('span', 'editable')
+                spanComplete.contentEditable = true
+                spanComplete.name = 'complete'
 
                 if (todo.complete){
                     const strike = this.#setElement('s')
                     strike.textContent = todo.text
-                    span.append(strike)
+                    spanText.append(strike)
+                    spanDescription.textContent = todo.description
+                    spanDueDate.textContent = todo.dueDate
+                    spanPriority.textContent = todo.priority
+                    spanComplete.textContent = todo.complete
+                    
                 }else{
-                    span.textContent = todo.text
+                    spanText.textContent = todo.text
+                    spanDescription.textContent = todo.description
+                    spanDueDate.textContent = todo.dueDate
+                    spanPriority.textContent = todo.priority
+                    spanComplete.textContent = todo.complete
+
                 }
 
                 const deleteButton = this.#setElement('button','delete')
                 deleteButton.textContent = 'Delete'
 
-                li.append(checkbox, span, deleteButton)
+                li.append(checkbox, 
+                    spanText, 
+                    spanDescription,  
+                    spanDueDate, 
+                    spanPriority, 
+                    spanComplete,
+                    deleteButton)
                 this.todoList.append(li)
             })
             
         }
     }
+
     _initLocalListeners(){
         this.todoList.addEventListener('input', event => {
-            if (event.target.className === 'editable'){
-                this._temporaryTodoText = event.target.innerText
-            }
+            
+            // if (event.target.className === 'editable'){
+            //     this._temporaryTodoText = event.target.innerText
+                
+            // }
+
+              Object.keys(this._temporaryTodo).forEach((key)=>{
+                    if (key === event.target.name){
+                        this._temporaryTodo[key] = event.target.innerText
+                    }
+                })
+
+         
+                        // handler(+event.target.parentElement.id, this._temporaryTodo)
+   
         })
     }
 
@@ -222,14 +310,14 @@ class Controller{
     constructor(model, view){
         this.model = model
         this.view = view
-
+        // Explicit this binding
         this.model.bindTodoListChanged(this.onTodoListChanged)
         this.view.bindAddTodos(this.handleAddTodo)
         this.view.bindDeleteTodo(this.handleDeleteTodo)
         this.view.bindToggleTodo(this.handleToggle)
-        this.view.bindEditTodo(this.handleEdit)
+        // this.view.bindEditTodo(this.handleEdit)
 
-        // this.onTodoListChanged(this.model.todos)
+        // Display initial todos
         this.onTodoListChanged(this.model.todos)
     }
 
@@ -237,8 +325,8 @@ class Controller{
         this.view.displayTodos(todos)
     }
 
-    handleAddTodo = (todoText, description, dueDate, priority) => {
-        this.model.add(todoText, description, dueDate, priority)
+    handleAddTodo = (aTodo) => {
+        this.model.add(aTodo)
     }
 
     handleDeleteTodo = id => {
@@ -249,8 +337,8 @@ class Controller{
         this.model.toggleTodo(id)
     }
 
-    handleEdit = (id, todoText) => {
-        this.model.edit(id, todoText, 'aaaaaa', new Date(), 999)
+    handleEdit = (id, aTodo) => {
+        this.model.edit(id, aTodo)
     }
 }
 
